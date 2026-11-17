@@ -1,0 +1,29 @@
+name: Release
+
+on:
+  push:
+    tags: ["v*"]
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    runs-on: macos-14
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Build universal app and zip it
+        env:
+          UNIVERSAL: "1"
+        run: |
+          VERSION="${GITHUB_REF_NAME#v}"
+          VERSION="$VERSION" ./build.sh
+          ditto -c -k --keepParent RoundedScreen.app "RoundedScreen-${VERSION}.zip"
+          echo "VERSION=$VERSION" >> "$GITHUB_ENV"
+
+      - name: Publish release
+        uses: softprops/action-gh-release@v2
+        with:
+          files: RoundedScreen-${{ env.VERSION }}.zip
+          generate_release_notes: true
